@@ -1,0 +1,34 @@
+**pycache**/
+*.pyc
+
+# virtual environments
+
+venv/
+my_env/
+my_env2/
+
+# Nextflow
+
+work/
+.nextflow*
+.nextflow.log
+
+# macOS
+
+.DS_Store
+
+# large raw data
+
+data/
+
+# optional large outputs
+
+results/stage1/pyscenic_output/
+
+# large generated/data files
+results/
+resources/pyscenic_resources/
+*.h5ad
+*.feather
+*.csv
+*.txt.gz
