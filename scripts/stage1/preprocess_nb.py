@@ -2,7 +2,9 @@ import scanpy as sc
 import matplotlib.pyplot as plt
 import argparse
 
-
+#this script takes a AnnData obect from load_nb.py and turns it into clean dataset
+#Scanpy QC -> normalization -> dimensionality reduction -> clustering
+#workflow, with thresholds chosen to match the original Sun et al. 2024 paper being replicated
 
 parser = argparse.ArgumentParser()
 
@@ -13,28 +15,17 @@ args = parser.parse_args()
 
 adata = sc.read_h5ad(args.input_file)
 
-sc.tl.pca(adata, random_state=777)
-sc.pp.neighbors(adata, random_state=777)
-sc.tl.umap(adata, random_state=777)
-sc.tl.leiden(adata, resolution=0.5, random_state=777)
+#apply quality control thresholds
+#flag mitochondrial genes whose var_names start with "MT-" in human gene annotation 
+# high mitochondrial RNA content in a cell indicates a dying/lysed cell
 
-#mitochondrial genes
 adata.var["mt"] = adata.var_names.str.startswith("MT-")
-
-sc.pp.calculate_qc_metrics(
-    adata,
-    qc_vars=["mt"],
-    inplace=True
-)
-
-#QC plots
-# sc.pl.violin(
-#     adata,
-#     ["n_genes_by_counts", "total_counts", "pct_counts_mt"],
-#     multi_panel=True
-# )
+#compute per cell: total counts, number of genes detected, and percentage of those counts coming from mitochondrial genes
+# stored as adata.obs["pct_counts_mt"]
+sc.pp.calculate_qc_metrics(adata, qc_vars=["mt"], inplace=True)
 
 #apply thresholds as in paper
+#cells failing any condition are dropped
 adata = adata[
     (adata.obs.n_genes_by_counts > 300) &
     (adata.obs.n_genes_by_counts < 7500) &
@@ -45,13 +36,13 @@ adata = adata[
 
 print(adata)
 
-#normalize
+#normalisation of cell count to 10000 (not all cells get same amount of seqs)
 sc.pp.normalize_total(adata, target_sum=1e4)
 
-#log transform
+#log transform needed for PCA to work better
 sc.pp.log1p(adata)
 
-#highly variable genes
+#identify top 2000 genes with the most cell-to-cell variability
 sc.pp.highly_variable_genes(
     adata,
     n_top_genes=2000
@@ -59,19 +50,19 @@ sc.pp.highly_variable_genes(
 
 adata = adata[:, adata.var.highly_variable]
 
-#scale
+#z-score each gene + clip extreme values at 10
 sc.pp.scale(adata, max_value=10)
 
 #PCA
-sc.tl.pca(adata)
+sc.tl.pca(adata) #reduce to top principal components
 
 #neighbors
-sc.pp.neighbors(adata)
+sc.pp.neighbors(adata) #build cell-to-cell similarity graph from PCA space
 
-#UMAP
+#UMAP - 2D visualisation
 sc.tl.umap(adata)
 
-#Leiden clustering
+#Leiden clustering (community detection)
 sc.tl.leiden(adata, resolution=0.5)
 
 #Plot
