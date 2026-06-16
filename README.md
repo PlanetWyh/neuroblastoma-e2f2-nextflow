@@ -302,7 +302,7 @@ The complete workflow is implemented using Nextflow DSL2 to ensure reproducibili
 
 
 
-Due to file size limitations, raw datasets are not included in this repository.
+Due to file size limitations, raw datasets are not included in this repository. Data and resources can be downloaded [here](https://drive.google.com/drive/folders/1Ur0Cbm0ajBEcnn7C02Q97-qfm8TCOe31?usp=share_link).
 
 
 
