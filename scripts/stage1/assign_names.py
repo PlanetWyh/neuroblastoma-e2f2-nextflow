@@ -1,5 +1,5 @@
 import scanpy as sc
-
+#explorative step to identify ne cells
 ne = sc.read_h5ad("ne_cells.h5ad")
 
 sc.tl.rank_genes_groups(
