@@ -5,6 +5,8 @@ import os
 import anndata as ad
 import scanpy as sc
 
+#this script finds for each GEO accession folder needed file "filtered_feature_bc_matrix.h5" using recursion
+#each sample is loaded with scanpy and all samples are concatenated into AnnData object cells x genes plus metadata
 
 parser = argparse.ArgumentParser()
 
@@ -19,6 +21,7 @@ args = parser.parse_args()
 pattern = os.path.join(args.input_dir, "**", "*filtered_feature_bc_matrix.h5")
 files = sorted(glob.glob(pattern, recursive=True))
 
+#notify if no files are found
 if len(files) == 0:
     raise FileNotFoundError(
         f"no files matching found in {args.input_dir}"
@@ -28,11 +31,12 @@ adatas = []
 
 for f in files:
     print(f"Loading {f}")
-
+    #load each sample
     sample_name = os.path.basename(f).split("_filtered")[0]
 
     adata = sc.read_10x_h5(f)
     adata.var_names_make_unique()
+    #tag each sample with its origin
     adata.obs["sample"] = sample_name
 
     adatas.append(adata)
