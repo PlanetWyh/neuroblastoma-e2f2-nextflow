@@ -4,6 +4,10 @@ import scanpy as sc
 import pandas as pd
 import matplotlib.pyplot as plt
 
+#not part of the automated workflow but this script is used to decide which cluster is NE cells
+#score every cell for NE-marker expression, visualize that score with individual markers 
+#across the whole-tumor UMAP/clusters, and rank clusters by average NE score to pick the best NE candidate
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--input_file", required=True)
 parser.add_argument("--output_dir", required=True)
@@ -13,11 +17,11 @@ os.makedirs(args.output_dir, exist_ok=True)
 
 adata = sc.read_h5ad(args.input_file)
 
-# Fix possible log1p/base issue
+#fix possible log1p/base issue
 if "log1p" in adata.uns and "base" in adata.uns["log1p"]:
     del adata.uns["log1p"]["base"]
 
-# Marker sets
+#marker sets
 ne_markers = ["GAL", "DDX1", "CCND1", "STMN2", "MEG3"]
 immune_markers = ["NKG7", "GNLY", "CCL5", "LYZ", "S100A8", "CD79A", "IGKC"]
 prolif_markers = ["PCLAF", "BIRC5"]
@@ -28,13 +32,14 @@ all_markers = [g for g in all_markers if g in adata.var_names]
 present_ne = [g for g in ne_markers if g in adata.var_names]
 print("NE markers found:", present_ne)
 
-# Add NE score
+#add NE score
 sc.tl.score_genes(
     adata,
     gene_list=present_ne,
     score_name="NE_score"
 )
 
+#plot 1: whole-tumor UMAP colored by cluster identity
 # UMAP: leiden
 sc.pl.umap(
     adata,
@@ -50,7 +55,8 @@ plt.savefig(
 )
 plt.close()
 
-# UMAP: NE score
+#plot 2: same UMAP, colored by the NE score instead
+#UMAP: NE score
 sc.pl.umap(
     adata,
     color="NE_score",
@@ -65,7 +71,8 @@ plt.savefig(
 )
 plt.close()
 
-# UMAP: individual NE markers
+#plot 3: each individual NE marker gene plotted separately
+#UMAP: individual NE markers
 sc.pl.umap(
     adata,
     color=present_ne,
@@ -80,7 +87,7 @@ plt.savefig(
 )
 plt.close()
 
-# Dotplot
+#dotplot across ALL marker panels (NE + immune + prolif)
 sc.pl.dotplot(
     adata,
     var_names=all_markers,
@@ -95,7 +102,7 @@ plt.savefig(
 )
 plt.close()
 
-# Cluster-level summary
+#cluster-level summary
 summary = (
     adata.obs
     .groupby("leiden", observed=True)["NE_score"]
